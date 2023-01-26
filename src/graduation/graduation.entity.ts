@@ -1,4 +1,11 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from 'src/user/user.entity';
+import {
+  Column,
+  DeleteDateColumn,
+  Entity,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class Graduation {
@@ -14,6 +21,12 @@ export class Graduation {
   @Column({ length: 64 })
   lattesUrl: string;
 
+  @OneToOne(() => User, (user) => user.graduation)
+  user: User;
+
+  @Column({ default: false })
+  isVerified: boolean;
+
   @Column({
     default: () => 'CURRENT_TIMESTAMP',
   })
@@ -24,4 +37,7 @@ export class Graduation {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 }

@@ -1,7 +1,4 @@
-import {
-  BadRequestException,
-  UnsupportedMediaTypeException,
-} from '@nestjs/common';
+import { UnsupportedMediaTypeException } from '@nestjs/common';
 import { MulterModuleOptions } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, resolve } from 'path';
@@ -10,7 +7,7 @@ import { v4 as uuid } from 'uuid';
 export const multerModuleOptions = (
   allowedMimeTypes: string[],
 ): MulterModuleOptions => ({
-  dest: resolve(__dirname, '..', '..', '..', 'uploads'),
+  dest: resolve('uploads'),
   limits: { fileSize: 1024 * 1024 * 50 },
   fileFilter: (req, file, cb) => {
     if (
@@ -38,7 +35,7 @@ export const multerModuleOptions = (
     },
 
     destination: (req, file, cb) => {
-      cb(null, resolve(__dirname, '..', '..', '..', 'uploads'));
+      cb(null, resolve('uploads'));
     },
   }),
 });

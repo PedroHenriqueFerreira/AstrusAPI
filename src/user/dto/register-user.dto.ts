@@ -8,13 +8,9 @@ import {
 } from 'class-validator';
 
 export class RegisterUserDto {
-  @IsInt({ message: 'O ID da graduação precisa ser um número' })
-  @IsOptional()
-  readonly graduationId: number;
-
   @IsInt({ message: 'O ID do avatar precisa ser um número' })
   @IsOptional()
-  readonly avatarId: number;
+  readonly avatarId?: number;
 
   @Length(3, 64, { message: 'O nome deve ter entre 3 e 64 caracteres' })
   @IsString({ message: 'O nome preica ser uma string' })
@@ -32,8 +28,8 @@ export class RegisterUserDto {
   @IsNotEmpty({ message: 'O email é um campo obrigatório' })
   readonly email: string;
 
-  @Length(8, 64, { message: 'O nome deve ter entre 3 e 64 caracteres' })
+  @Length(8, 64, { message: 'A senha deve ter entre 8 e 64 caracteres' })
   @IsString({ message: 'A senha precisa ser uma string' })
-  @IsNotEmpty({ message: 'O email é um campo obrigatório' })
+  @IsNotEmpty({ message: 'A senha é um campo obrigatório' })
   readonly password: string;
 }

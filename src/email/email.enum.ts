@@ -1,0 +1,4 @@
+export enum EmailEnum {
+  VERIFICATION = 'VERIFICATION',
+  RESET_PASSWORD = 'RESET_PASSWORD',
+}
