@@ -7,11 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { compare } from 'bcryptjs';
 import Mail from 'nodemailer/lib/mailer';
-import {
-  EMAIL_EXPIRES_TIMEOUT,
-  EMAIL_RESEND_INTERVAL,
-  transporter,
-} from 'src/shared/email/email.config';
+import { transporter } from '../shared/email/email.config';
 import { User } from 'src/user/user.entity';
 import { Repository } from 'typeorm';
 import { SendEmailDto } from './dto/send-email.dto';
@@ -39,16 +35,6 @@ export class EmailService {
 
   getResetPasswordCode() {
     return randomBytes(32).toString('hex');
-  }
-
-  async checkCode(code: string, hash: string, type: EmailEnum) {
-    const codeIsCorrect = await compare(code, hash);
-
-    if (!codeIsCorrect) {
-      throw new UnauthorizedException(
-        `Código de ${this.getTypeName(type)} inválido`,
-      );
-    }
   }
 
   sendEmail(options: Mail.Options) {
@@ -85,7 +71,10 @@ export class EmailService {
     });
 
     if (email) {
-      if (email.updatedAt > new Date(Date.now() - EMAIL_RESEND_INTERVAL)) {
+      if (
+        email.updatedAt >
+        new Date(Date.now() - +process.env.EMAIL_RESEND_INTERVAL)
+      ) {
         throw new BadRequestException(
           `Código de ${this.getTypeName(type)} já enviado`,
         );
@@ -154,22 +143,21 @@ export class EmailService {
     });
 
     if (!email) {
-      throw new NotFoundException('Email não encontrado');
+      throw new NotFoundException('Verificação não solicitada');
     }
 
-    if (email.user.isVerified) {
-      throw new BadRequestException('Email já verificado');
-    }
-
-    if (email.updatedAt < new Date(Date.now() - EMAIL_EXPIRES_TIMEOUT)) {
+    if (
+      email.updatedAt <
+      new Date(Date.now() - +process.env.EMAIL_EXPIRES_TIMEOUT)
+    ) {
       throw new BadRequestException('Código de verificação expirado');
     }
 
-    await this.checkCode(
-      verificateEmailDto.code,
-      email.code,
-      EmailEnum.VERIFICATION,
-    );
+    const codeIsCorrect = await compare(verificateEmailDto.code, email.code);
+
+    if (!codeIsCorrect) {
+      throw new UnauthorizedException('Código de verificação inválido');
+    }
 
     await this.userRepository.update(email.user.id, { isVerified: true });
     await this.emailRepository.delete(email.id);
@@ -199,13 +187,7 @@ export class EmailService {
     await this.sendEmail({
       to: sendEmailDto.email.toLowerCase(),
       subject: 'Redefinir senha',
-      html: `
-        Para redefinir sua senha
-
-        <a href="http://localhost:3000/reset-password?code=${code}&userId=${user.id}">
-          clique aqui
-        </a>
-      `,
+      html: `Para redefinir sua senha <a href="http://localhost:3000/reset-password?code=${code}&userId=${user.id}">clique aqui</a>`,
     });
 
     return { success: true };
@@ -227,18 +209,21 @@ export class EmailService {
     });
 
     if (!email) {
-      throw new NotFoundException('Email não encontrado');
+      throw new NotFoundException('Recuperação não solicitada');
     }
 
-    if (email.updatedAt < new Date(Date.now() - EMAIL_EXPIRES_TIMEOUT)) {
+    if (
+      email.updatedAt <
+      new Date(Date.now() - +process.env.EMAIL_EXPIRES_TIMEOUT)
+    ) {
       throw new BadRequestException('Código de recuperação expirado');
     }
 
-    await this.checkCode(
-      resetPasswordDto.code,
-      email.code,
-      EmailEnum.RESET_PASSWORD,
-    );
+    const codeIsCorrect = await compare(resetPasswordDto.code, email.code);
+
+    if (!codeIsCorrect) {
+      throw new UnauthorizedException('Código de recuperação inválido');
+    }
 
     const newUser = this.userRepository.create({
       password: resetPasswordDto.password,
